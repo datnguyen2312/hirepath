@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="page-main">
+  <section class="page-hero container slim-hero">
+    <div>
+      <div class="eyebrow">STEP 2</div>
+      <h1>Skills Gap Check</h1>
+      <p>Compare your profile against the target role, visible job requirements, and readiness signals. Choose a role and run the analysis.</p>
+    </div>
+    <div class="page-badge-card">
+      <div class="badge-stat">Operational Thinking</div>
+      <p>Translate extracted resume evidence into role fit, skill gaps, strengths to leverage, and the exact signals missing before applying.</p>
+    </div>
+  </section>
+  <section class="container">
+    <div class="panel-card">
+      <div class="step-heading-row">
+        <div>
+          <div class="subheading">Selected resume text</div>
+          <p class="body-copy muted-copy">If this is empty, go back to Resume Analysis and upload or load a demo profile.</p>
+        </div>
+        <a class="btn btn-secondary" href="/resume-analysis">Back to Resume Analysis</a>
+      </div>
+      <textarea id="resume-text" class="resume-textarea small" placeholder="Your stored resume text will appear here."></textarea>
+    </div>
+  </section>
+  <section class="container">
+    <div class="panel-card">
+      <div class="step-heading-row">
+        <div>
+          <div class="subheading">Select target role</div>
+          <p class="body-copy muted-copy">For the MVP demo, start with Supply Chain Analyst or a closely related entry-level operations role.</p>
+        </div>
+        <div class="step-pill" id="selected-role-pill">No role selected yet.</div>
+      </div>
+      <div id="role-grid" class="role-grid">
+        {% for role in roles %}
+        <button class="role-card" data-role-slug="{{ role.slug }}" type="button">
+          <div class="role-card-title">{{ role.title }}</div>
+          <div class="role-card-summary">{{ role.summary }}</div>
+        </button>
+        {% endfor %}
+      </div>
+      <div class="action-row top-gap">
+        <button id="analyze-btn" class="btn btn-primary btn-large" type="button" disabled>Analyze role fit</button>
+        <a class="btn btn-secondary btn-large" href="/mock-interview">Continue to Mock Interview</a>
+      </div>
+    </div>
+  </section>
+  <section class="container">
+    <div class="info-note">
+      <strong>How results are generated:</strong> HirePath looks at resume evidence, compares it to target-role skills, and uses AI to turn that evidence into coaching suggestions. It is built for preparation, not hiring decisions.
+    </div>
+  </section>
+  <section id="analysis-section" class="container hidden">
+    <div class="analysis-layout">
+      <div class="score-hero">
+        <div class="fit-score-circle" id="fit-score">--</div>
+        <div>
+          <div class="eyebrow">ROLE FIT RESULT</div>
+          <h2 id="fit-label">Run the analysis</h2>
+          <p id="analysis-summary" class="body-copy">Your role-fit summary will appear here.</p>
+          <div class="mode-chip" id="mode-badge">mode: ready</div>
+        </div>
+      </div>
+      <div class="analysis-grid-three">
+        <div class="panel-card"><div class="subheading">Matched Skills</div><ul id="matched-skills" class="bullet-list"></ul></div>
+        <div class="panel-card"><div class="subheading">Missing Skills</div><ul id="missing-skills" class="bullet-list"></ul></div>
+        <div class="panel-card"><div class="subheading">Resume Improvements</div><ul id="resume-improvements" class="bullet-list"></ul></div>
+      </div>
+      <div class="analysis-grid-two">
+        <div class="panel-card"><div class="subheading">Rewritten Bullets</div><div id="rewritten-bullets" class="rewrite-stack"></div></div>
+        <div class="panel-card"><div class="subheading">Next Steps</div><ul id="next-steps" class="bullet-list"></ul><div class="subheading top-gap">Mock Interview Prompt</div><div id="mock-question-box" class="quote-box"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

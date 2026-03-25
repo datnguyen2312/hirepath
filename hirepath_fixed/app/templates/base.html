@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title or 'HirePath' }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body data-page="{{ page_id }}">
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container nav-bar">
+        <a class="brand-link" href="/">
+          <img class="brand-logo" src="/static/hirepath-logo.png" alt="HirePath logo" />
+          <div>
+            <div class="brand-name">HirePath</div>
+            <div class="brand-sub">Student Career Copilot</div>
+          </div>
+        </a>
+        <nav class="main-nav">
+          <a class="{% if page_id == 'resume' %}active{% endif %}" href="/resume-analysis">Resume Analysis</a>
+          <a class="{% if page_id == 'skills' %}active{% endif %}" href="/skills-gap-check">Skills Gap Check</a>
+          <a class="{% if page_id == 'interview' %}active{% endif %}" href="/mock-interview">Mock Interview</a>
+          <a class="{% if page_id == 'next' %}active{% endif %}" href="/next-step-plan">Action Plan</a>
+        </nav>
+        <a class="btn btn-primary nav-cta" href="/resume-analysis">Try Demo</a>
+      </div>
+    </header>
+    {% block content %}{% endblock %}
+  </div>
+  {% if roles is defined %}
+  <script id="bootstrap-data" type="application/json">{{ {'roles': roles, 'demo_resumes': demo_resumes}|tojson }}</script>
+  {% endif %}
+  <script src="/static/app.js"></script>
+</body>
+</html>

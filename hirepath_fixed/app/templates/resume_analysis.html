@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="page-main">
+  <section class="page-hero container slim-hero">
+    <div>
+      <div class="eyebrow">STEP 1</div>
+      <h1>Resume Analysis</h1>
+      <p>Upload a PDF, DOCX, or TXT resume, or load a demo student profile. HirePath extracts experience, skills, achievements, and resume evidence instantly.</p>
+    </div>
+    <div class="page-badge-card">
+      <div class="badge-stat">Operational Thinking</div>
+      <p>Start with source evidence. Everything downstream depends on resume quality, extracted signals, and quantified achievements.</p>
+    </div>
+  </section>
+
+  <section class="container work-grid">
+    <div class="panel-card">
+      <div class="subheading">Upload your resume</div>
+      <div id="dropzone" class="dropzone">
+        <p>Drag and drop a PDF, DOCX, or TXT file here</p>
+        <p class="body-copy">or choose a file and extract the text</p>
+        <input id="resume-file" type="file" accept=".pdf,.doc,.docx,.txt" />
+        <button id="extract-btn" class="btn btn-primary" type="button">Extract resume text</button>
+      </div>
+      <div class="status-line" id="upload-status">Nothing uploaded yet.</div>
+    </div>
+    <div class="panel-card">
+      <div class="subheading">Try a demo candidate</div>
+      <div id="demo-resume-list" class="badge-row wrap-gap">
+        {% for item in demo_resumes %}
+        <button class="chip-button" type="button" data-demo-resume="{{ item.key }}">{{ item.label }}</button>
+        {% endfor %}
+      </div>
+      <p class="body-copy muted-copy">Demo profiles are preloaded so you can test the app without uploading a file.</p>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="panel-card">
+      <div class="step-heading-row">
+        <div>
+          <div class="subheading">Extracted resume text</div>
+          <p class="body-copy muted-copy">You can edit the extracted content before moving to the skills gap check.</p>
+        </div>
+        <a class="btn btn-secondary" href="/skills-gap-check">Go to Skills Gap Check</a>
+      </div>
+      <textarea id="resume-text" class="resume-textarea" placeholder="Extracted resume text will appear here."></textarea>
+    </div>
+  </section>
+</main>
+{% endblock %}

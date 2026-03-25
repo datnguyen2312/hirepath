@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="page-main">
+  <section class="page-hero container slim-hero">
+    <div>
+      <div class="eyebrow">STEP 4</div>
+      <h1>Action Plan</h1>
+      <p>Turn your analysis into a focused next-step plan. Review your strongest matches, missing skills, resume priorities, and one interview coaching takeaway.</p>
+    </div>
+    <div class="page-badge-card">
+      <div class="badge-stat">How HirePath works</div>
+      <p>HirePath compares your resume against expected role skills and uses AI to generate coaching suggestions. It is designed to support preparation, not make hiring decisions.</p>
+    </div>
+  </section>
+  <section class="container">
+    <div class="panel-card">
+      <div class="step-heading-row">
+        <div>
+          <div class="subheading">Build your action plan</div>
+          <p class="body-copy muted-copy">Complete Skills Gap Check and Mock Interview first. Then generate a practical plan based on your role-fit analysis and interview feedback.</p>
+        </div>
+        <div class="step-pill" id="opportunity-status">Complete the earlier steps, then build your plan.</div>
+      </div>
+      <div class="action-row top-gap">
+        <button id="build-action-plan-btn" class="btn btn-primary btn-large" type="button">Build my action plan</button>
+      </div>
+    </div>
+  </section>
+  <section class="container hidden" id="opportunity-summary-card">
+    <div class="summary-banner">
+      <div class="eyebrow">ACTION PLAN SUMMARY</div>
+      <p id="opportunity-summary">Your personalized action plan will appear here.</p>
+    </div>
+  </section>
+  <section class="container hidden" id="opportunity-section">
+    <div id="opportunity-grid" class="plan-grid"></div>
+  </section>
+</main>
+{% endblock %}

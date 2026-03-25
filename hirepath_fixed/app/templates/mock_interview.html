@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="page-main">
+  <section class="page-hero container slim-hero">
+    <div>
+      <div class="eyebrow">STEP 3</div>
+      <h1>Mock Interview</h1>
+      <p>Practice one AI-generated interview question based on your selected role and strengths. Get feedback on structure, evidence, and clarity.</p>
+    </div>
+    <div class="page-badge-card">
+      <div class="badge-stat">Operational Thinking</div>
+      <p>Confidence grows when candidates can connect their experience to employer needs in clear, well-structured stories.</p>
+    </div>
+  </section>
+  <section class="container">
+    <div class="analysis-grid-two">
+      <div class="panel-card">
+        <div class="subheading">Current interview prompt</div>
+        <div id="mock-question-box" class="quote-box">Run the Skills Gap Check first to generate a tailored interview question.</div>
+        <div class="step-pill top-gap" id="interview-status">Waiting for analysis.</div>
+      </div>
+      <div class="panel-card">
+        <div class="subheading">Answer the question</div>
+        <textarea id="interview-answer" class="resume-textarea small" placeholder="Write your answer using situation, action, and result."></textarea>
+        <div class="action-row top-gap">
+          <button id="score-answer-btn" class="btn btn-primary" type="button">Score my answer</button>
+          <a class="btn btn-secondary" href="/next-step-plan">Continue to Next-Step Plan</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="container hidden" id="feedback-grid">
+    <div class="analysis-grid-three">
+      <div class="panel-card"><div class="subheading">Overall Score</div><div id="interview-score" class="fit-score-circle mini">--</div></div>
+      <div class="panel-card"><div class="subheading">Strengths</div><ul id="feedback-strengths" class="bullet-list"></ul></div>
+      <div class="panel-card"><div class="subheading">Weaknesses</div><ul id="feedback-weaknesses" class="bullet-list"></ul></div>
+    </div>
+  </section>
+  <section class="container hidden" id="feedback-detail-grid">
+    <div class="analysis-grid-two">
+      <div class="panel-card"><div class="subheading">Feedback by Category</div><div id="feedback-categories" class="score-stack"></div></div>
+      <div class="panel-card"><div class="subheading">Improvement Tips</div><ul id="answer-tips" class="bullet-list"></ul><div class="subheading top-gap">Sample Better Answer</div><div id="sample-better-answer" class="quote-box"></div><div class="subheading top-gap">Next Steps</div><ul id="feedback-next-steps" class="bullet-list"></ul></div>
+    </div>
+  </section>
+</main>
+{% endblock %}
