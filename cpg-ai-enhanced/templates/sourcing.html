@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Strategic Sourcing Workspace — CPG Sourcing Suite</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Top bar ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div>
+      <span class="eyebrow">Strategic Sourcing Workspace</span>
+      <h1>Discover suppliers, compare options, and manage qualification</h1>
+      <p class="muted">Shortlist → RFQs → S&amp;OP → Pipeline</p>
+    </div>
+    <div class="top-actions">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Executive Dashboard</a>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">Add Supplier</a>
+    </div>
+  </header>
+
+  <!-- ── Filters ─────────────────────────────────────────────── -->
+  <section class="filter-shell card">
+    <div class="section-head compact"><div><span class="eyebrow subtle">Filters</span><h3>Refine sourcing candidates</h3></div></div>
+    <form class="filter-row compact-filters" method="get" action="{{ url_for('sourcing') }}">
+      <input name="search" value="{{ filters.search }}" placeholder="Search supplier, material, or brand">
+      <select name="category"><option value="">All Categories</option>{% for c in categories %}<option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      <select name="risk"><option value="">All Risk Levels</option><option value="High" {% if filters.risk == "High" %}selected{% endif %}>High</option><option value="Medium" {% if filters.risk == "Medium" %}selected{% endif %}>Medium</option><option value="Low" {% if filters.risk == "Low" %}selected{% endif %}>Low</option></select>
+      <select name="country"><option value="">All Countries</option>{% for c in countries %}<option value="{{ c }}" {% if filters.country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      <select name="stage"><option value="">All Qualification Stages</option>{% for s in stages %}<option value="{{ s }}" {% if filters.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+      <button class="btn btn-primary small">Apply</button>
+      <a href="{{ url_for('sourcing') }}" class="btn btn-secondary small">Clear</a>
+    </form>
+  </section>
+
+  <!-- ── KPIs ────────────────────────────────────────────────── -->
+  <section class="kpis five">
+    <div class="card kpi"><span>Total Suppliers</span><strong>{{ summary.total_suppliers }}</strong></div>
+    <div class="card kpi"><span>Sourcing Opportunities</span><strong>{{ summary.opportunities }}</strong></div>
+    <div class="card kpi warn"><span>Backup Gaps</span><strong>{{ summary.backups_needed }}</strong></div>
+    <div class="card kpi success"><span>Potential Savings</span><strong>${{ "{:,.0f}".format(summary.potential_savings) }}</strong></div>
+    <div class="card kpi"><span>Co-Packers</span><strong>{{ summary.co_packs }}</strong></div>
+  </section>
+
+  <!-- ── AI Sourcing Recommendations ────────────────────────── -->
+  <section class="card ai-panel-card">
+    <div class="section-head">
+      <div>
+        <div class="ai-label"><span class="ai-dot"></span><span class="eyebrow subtle">AI Sourcing Advisor</span></div>
+        <h3>Strategic Sourcing Recommendations</h3>
+        <p class="muted tiny">Claude reviews your shortlist, RFQ pipeline, and backup gaps to surface the three most impactful sourcing moves.</p>
+      </div>
+      <button class="btn btn-ai" id="btn-sourcing-rec" onclick="loadAIInsight('sourcing_recommendations','ai-sourcing-rec','btn-sourcing-rec')">
+        <span class="ai-btn-icon">✦</span> Get Recommendations
+      </button>
+    </div>
+    <div id="ai-sourcing-rec" class="ai-insight-body ai-placeholder">
+      <p class="muted">Click to generate 3 actionable sourcing recommendations based on your current portfolio, backup gaps, and RFQ status.</p>
+    </div>
+  </section>
+
+  <!-- ── Discovery + RFQ ─────────────────────────────────────── -->
+  <section class="grid-2">
+    <article class="card">
+      <div class="section-head"><div><span class="eyebrow subtle">1. Supplier Discovery</span><h3>Recommended Outsource Candidates</h3></div></div>
+      <div class="table-wrap compact">
+        <table>
+          <thead><tr><th>Supplier</th><th>Material</th><th>Category</th><th>Country</th><th>Fit</th><th>Lead</th><th>Cost</th><th>Recommendation</th></tr></thead>
+          <tbody>
+            {% for x in sourcing_cards %}
+            <tr><td>{{ x.supplier_name }}</td><td>{{ x.material_name }}</td><td>{{ x.category }}</td><td>{{ x.country }}</td><td>{{ x.fit_score }}</td><td>{{ x.lead_time }}d</td><td>${{ "%.2f"|format(x.unit_cost) }}</td><td>{{ x.recommendation }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-head"><div><span class="eyebrow subtle">2. RFQ Tracker</span><h3>Open Quotes and Comparison</h3></div></div>
+      <form class="rfq-form slim" method="post" action="{{ url_for('add_rfq') }}">
+        <input name="supplier_name" placeholder="Supplier" required>
+        <input name="material_name" placeholder="Material / service" required>
+        <select name="quote_status"><option>Requested</option><option>Received</option><option>In Review</option><option>Selected</option></select>
+        <input name="quoted_cost" type="number" step="0.01" placeholder="Cost" required>
+        <input name="quoted_lead" type="number" placeholder="Lead" required>
+        <select name="selected"><option>No</option><option>Yes</option></select>
+        <button class="btn btn-primary small">Add RFQ</button>
+      </form>
+      <div class="table-wrap compact">
+        <table>
+          <thead><tr><th>Supplier</th><th>Material</th><th>Status</th><th>Cost</th><th>Lead</th><th>Selected</th></tr></thead>
+          <tbody>
+            {% for r in rfqs %}
+            <tr><td>{{ r.supplier_name }}</td><td>{{ r.material_name }}</td><td>{{ r.quote_status }}</td><td>${{ "%.2f"|format(r.quoted_cost) }}</td><td>{{ r.quoted_lead }}d</td><td>{{ r.selected }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <!-- ── S&OP Control Tower ──────────────────────────────────── -->
+  <section class="card planning-hero">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow subtle">3. Forecasting + Demand Planning</span>
+        <h3>S&amp;OP Control Tower</h3>
+        <p class="muted tiny">Connects sourcing with volume risk, consensus demand, and supply readiness.</p>
+      </div>
+      <div class="plan-pill">Next 6 months planning horizon</div>
+    </div>
+
+    <div class="planning-kpis">
+      <div class="mini-metric"><span>Forecast Accuracy</span><strong>{{ planning.kpis.forecast_accuracy }}%</strong></div>
+      <div class="mini-metric"><span>Forecast Bias</span><strong>{{ planning.kpis.forecast_bias }}%</strong></div>
+      <div class="mini-metric"><span>Service Risk</span><strong>{{ planning.kpis.service_risk }}</strong></div>
+      <div class="mini-metric"><span>Constrained Months</span><strong>{{ planning.kpis.constrained_months }}</strong></div>
+    </div>
+
+    <div class="planning-grid">
+      <article class="planning-panel">
+        <div class="section-head compact"><div><span class="eyebrow subtle">Forecast View</span><h4>Demand vs. Supply Consensus</h4></div></div>
+        <canvas id="planningChart" height="180"></canvas>
+      </article>
+
+      <article class="planning-panel">
+        <div class="section-head compact">
+          <div><span class="eyebrow subtle">S&amp;OP Actions</span><h4>Callouts</h4></div>
+          <button class="btn btn-ai btn-ai-sm" id="btn-sop" onclick="loadAIInsight('sop_actions','ai-sop-actions','btn-sop')">
+            <span class="ai-btn-icon">✦</span> AI Actions
+          </button>
+        </div>
+        <div id="ai-sop-actions" class="ai-insight-body ai-placeholder">
+          <div class="action-list">
+            {% for action in planning.actions %}
+            <div class="action-card">{{ action }}</div>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="table-wrap compact planning-table-wrap">
+      <table>
+        <thead><tr><th>Material / Lane</th><th>Brand</th><th>Owner</th><th>Demand Plan</th><th>Supply Plan</th><th>Gap</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for row in planning.plans %}
+          <tr>
+            <td>{{ row.material }}</td><td>{{ row.brand }}</td><td>{{ row.owner }}</td>
+            <td>{{ row.demand }}k</td><td>{{ row.supply }}k</td><td>{{ row.gap }}k</td>
+            <td><span class="status-pill {% if row.status == 'Expedite / rebalance' %}status-urgent{% elif row.status == 'Monitor' %}status-warn{% else %}status-ok{% endif %}">{{ row.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Mid-row insights ────────────────────────────────────── -->
+  <section class="grid-3 sourcing-mid">
+    <article class="card">
+      <div class="section-head compact"><div><span class="eyebrow subtle">Qualification Snapshot</span><h3>Stage Summary</h3></div></div>
+      <div class="stage-summary-grid">
+        {% for stage, count in pipeline_counts.items() %}
+        <div class="stage-summary-card"><span>{{ stage }}</span><strong>{{ count }}</strong></div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-head compact"><div><span class="eyebrow subtle">CPG Readiness</span><h3>Commercial Signals</h3></div></div>
+      <div class="metric-stack">
+        <div class="mini-metric"><span>Certification-ready suppliers</span><strong>{{ insights.cert_ready }}</strong></div>
+        <div class="mini-metric"><span>Single-source exposure</span><strong>{{ insights.single_source }}</strong></div>
+        <div class="mini-metric"><span>Average supplier fit</span><strong>{{ insights.avg_fit }}</strong></div>
+        <div class="mini-metric"><span>Co-packers in active pipeline</span><strong>{{ insights.co_pack_ready }}</strong></div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="section-head compact"><div><span class="eyebrow subtle">Country Mix</span><h3>Supplier Footprint</h3></div></div>
+      <canvas id="countryChart" height="220"></canvas>
+    </article>
+  </section>
+
+  <!-- ── Qualification Board ─────────────────────────────────── -->
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow subtle">4. Qualification Board</span>
+        <h3>Approval Pipeline</h3>
+      </div>
+      <div class="kanban-help">Track qualification workflow stage-by-stage.</div>
+    </div>
+    <div class="kanban-wrap">
+      <div class="kanban mini">
+        {% for stage, items in pipeline.items() %}
+        <div class="kanban-col tall">
+          <div class="kanban-head">{{ stage }} <span>{{ items|length }}</span></div>
+          <div class="kanban-stack">
+            {% for x in items %}
+            <div class="kanban-card">
+              <strong>{{ x.supplier_name }}</strong>
+              <p>{{ x.material_name }}</p>
+              <small>{{ x.country }} • {{ x.certifications }}</small>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const chartData = {{ chart_data|tojson }};
+const planningData = {{ planning|tojson }};
+const aiContext = {{ ai_context|tojson }};
+
+new Chart(document.getElementById('countryChart'), {
+  type: 'doughnut',
+  data: { labels: chartData.country_labels, datasets: [{ data: chartData.country_values, backgroundColor: ['#7aa2ff','#67e8f9','#f6c45d','#34d399','#ff7b72','#a78bfa'], borderWidth: 0 }]},
+  options: { plugins: { legend: { labels: { color: '#d9e6ff' } } } }
+});
+new Chart(document.getElementById('planningChart'), {
+  type: 'line',
+  data: {
+    labels: planningData.months,
+    datasets: [
+      { label: 'Stat Forecast', data: planningData.forecast, borderColor: '#7aa2ff', backgroundColor: 'rgba(122,162,255,0.12)', tension: 0.35, fill: false },
+      { label: 'Consensus Demand', data: planningData.consensus, borderColor: '#67e8f9', backgroundColor: 'rgba(103,232,249,0.12)', tension: 0.35, fill: false },
+      { label: 'Supply Capacity', data: planningData.capacity, borderColor: '#f6c45d', backgroundColor: 'rgba(246,196,93,0.12)', tension: 0.35, fill: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#d9e6ff' } } },
+    scales: { x: { ticks: { color: '#a7b7d7' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#a7b7d7' }, grid: { color: 'rgba(255,255,255,0.05)' } } }
+  }
+});
+
+async function loadAIInsight(mode, targetId, btnId) {
+  const target = document.getElementById(targetId);
+  const btn = document.getElementById(btnId);
+  const origLabel = btn.innerHTML;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ai-spinner"></span> Analyzing…';
+  target.classList.remove('ai-placeholder');
+  target.innerHTML = '<div class="ai-loading"><span class="ai-pulse"></span><span class="ai-pulse"></span><span class="ai-pulse"></span></div>';
+
+  try {
+    const res = await fetch('/api/ai-insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode, context: aiContext })
+    });
+    const data = await res.json();
+    if (data.ok && data.insight) {
+      renderInsight(target, data.insight, mode);
+    } else {
+      target.innerHTML = '<p class="ai-error">Unable to generate insight. Check API connectivity.</p>';
+    }
+  } catch (e) {
+    target.innerHTML = '<p class="ai-error">Network error — please try again.</p>';
+  }
+  btn.disabled = false;
+  btn.innerHTML = origLabel;
+}
+
+function renderInsight(el, text, mode) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const html = lines.map(line => {
+    const formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const isBullet = /^[\-\•\d\.]/.test(line);
+    return isBullet ? `<div class="ai-bullet">${formatted}</div>` : `<p>${formatted}</p>`;
+  }).join('');
+  el.innerHTML = `<div class="ai-bullets">${html}</div>`;
+}
+</script>
+</body>
+</html>

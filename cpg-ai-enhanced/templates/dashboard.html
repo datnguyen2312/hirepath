@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Executive Dashboard — CPG Sourcing Suite</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Top bar ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div>
+      <span class="eyebrow">Executive Dashboard</span>
+      <h1>Supplier Risk &amp; Strategic Sourcing Overview</h1>
+      <p class="muted">Built to help CPG teams scan risk, spot opportunities, and act faster.</p>
+    </div>
+    <div class="top-actions">
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">Add Supplier</a>
+      <a href="{{ url_for('sourcing') }}" class="btn btn-secondary">Strategic Sourcing</a>
+      <form action="{{ url_for('seed') }}" method="post"><button class="btn btn-secondary">Reload Demo Data</button></form>
+      <form action="{{ url_for('reset') }}" method="post"><button class="btn btn-danger">Reset</button></form>
+    </div>
+  </header>
+
+  <!-- ── AI Executive Summary ────────────────────────────────── -->
+  <section class="card ai-exec-banner" id="ai-exec-section">
+    <div class="ai-banner-left">
+      <div class="ai-label">
+        <span class="ai-dot"></span>
+        <span class="eyebrow subtle">AI Executive Summary</span>
+      </div>
+      <div id="ai-exec-text" class="ai-exec-text">
+        <span class="ai-static-story">{{ story }}</span>
+      </div>
+    </div>
+    <div class="ai-banner-right">
+      <div class="continuity">
+        <span>Supply Continuity</span>
+        <strong>{{ summary.continuity }}/100</strong>
+        <small>{% if summary.continuity >= 80 %}Healthy{% elif summary.continuity >= 60 %}Watchlist{% else %}Critical{% endif %}</small>
+      </div>
+      <button class="btn btn-ai" id="btn-exec-summary" onclick="loadAIInsight('exec_summary','ai-exec-text','btn-exec-summary')">
+        <span class="ai-btn-icon">✦</span> Generate AI Summary
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Filters ─────────────────────────────────────────────── -->
+  <section class="filter-shell card">
+    <div class="section-head compact"><div><span class="eyebrow subtle">Filters</span><h3>Refine the dashboard view</h3></div></div>
+    <form class="filter-row" method="get" action="{{ url_for('dashboard') }}">
+      <input name="search" value="{{ filters.search }}" placeholder="Search supplier, material, or brand">
+      <select name="category"><option value="">All Categories</option>{% for c in categories %}<option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      <select name="risk"><option value="">All Risk Levels</option><option value="High" {% if filters.risk == "High" %}selected{% endif %}>High</option><option value="Medium" {% if filters.risk == "Medium" %}selected{% endif %}>Medium</option><option value="Low" {% if filters.risk == "Low" %}selected{% endif %}>Low</option></select>
+      <select name="country"><option value="">All Countries</option>{% for c in countries %}<option value="{{ c }}" {% if filters.country == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+      <select name="stage"><option value="">All Qualification Stages</option>{% for s in stages %}<option value="{{ s }}" {% if filters.stage == s %}selected{% endif %}>{{ s }}</option>{% endfor %}</select>
+      <button class="btn btn-primary small">Apply</button>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary small">Clear</a>
+    </form>
+  </section>
+
+  <!-- ── KPIs ────────────────────────────────────────────────── -->
+  <section class="kpis seven">
+    <div class="card kpi"><span>Total Suppliers</span><strong>{{ summary.total_suppliers }}</strong></div>
+    <div class="card kpi warn"><span>High Risk</span><strong>{{ summary.high_risk }}</strong></div>
+    <div class="card kpi warn"><span>Backups Needed</span><strong>{{ summary.backups_needed }}</strong></div>
+    <div class="card kpi"><span>Sourcing Opportunities</span><strong>{{ summary.opportunities }}</strong></div>
+    <div class="card kpi success"><span>Potential Savings</span><strong>${{ "{:,.0f}".format(summary.potential_savings) }}</strong></div>
+    <div class="card kpi"><span>Co-Packers</span><strong>{{ summary.co_packs }}</strong></div>
+    <div class="card kpi"><span>QA Flags</span><strong>{{ insights.qa_flags }}</strong></div>
+  </section>
+
+  <!-- ── Charts + AI Risk Analysis ──────────────────────────── -->
+  <section class="grid-3">
+    <article class="card">
+      <div class="section-head compact"><div><span class="eyebrow subtle">Category Spend</span><h3>Spend by Material Category</h3></div></div>
+      <canvas id="spendChart" height="220"></canvas>
+    </article>
+    <article class="card">
+      <div class="section-head compact"><div><span class="eyebrow subtle">Supplier Fit</span><h3>Top Supplier Fit Scores</h3></div></div>
+      <canvas id="fitChart" height="220"></canvas>
+    </article>
+    <article class="card">
+      <div class="section-head compact">
+        <div><span class="eyebrow subtle">CPG Readiness</span><h3>Commercial Risk Signals</h3></div>
+      </div>
+      <div class="metric-stack">
+        <div class="mini-metric"><span>Certification-ready suppliers</span><strong>{{ insights.cert_ready }}</strong></div>
+        <div class="mini-metric"><span>Top SKU exposure</span><strong>{% if insights.retailer_risk %}{{ insights.retailer_risk[0].affected_skus }} SKUs{% else %}0{% endif %}</strong></div>
+        <div class="mini-metric"><span>Most exposed brand</span><strong>{% if insights.retailer_risk %}{{ insights.retailer_risk[0].brand }}{% else %}-{% endif %}</strong></div>
+      </div>
+      <div class="risk-list">
+        {% for x in insights.retailer_risk %}
+          <div class="risk-item">
+            <div><strong>{{ x.material_name }}</strong><p>{{ x.supplier_name }} • {{ x.brand }}</p></div>
+            <span class="badge risk-{{ x.risk_level|lower }}">{{ x.risk_level }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <!-- ── AI Risk Analysis Panel ─────────────────────────────── -->
+  <section class="card ai-panel-card">
+    <div class="section-head">
+      <div>
+        <div class="ai-label"><span class="ai-dot"></span><span class="eyebrow subtle">AI Risk Analysis</span></div>
+        <h3>Intelligent Risk Breakdown</h3>
+        <p class="muted tiny">Claude analyzes your supplier portfolio and surfaces actionable risk signals.</p>
+      </div>
+      <button class="btn btn-ai" id="btn-risk-analysis" onclick="loadAIInsight('risk_analysis','ai-risk-text','btn-risk-analysis')">
+        <span class="ai-btn-icon">✦</span> Analyze Risks
+      </button>
+    </div>
+    <div id="ai-risk-text" class="ai-insight-body ai-placeholder">
+      <p class="muted">Click "Analyze Risks" to get an AI-powered breakdown of your current supplier risk posture — covering supply continuity, cost exposure, quality flags, and immediate actions.</p>
+    </div>
+  </section>
+
+  <!-- ── Supplier Table ─────────────────────────────────────── -->
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow subtle">Supplier Intelligence</span>
+        <h3>Detailed Supplier Table</h3>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Supplier</th><th>Material</th><th>Category</th><th>Country</th><th>Cost</th><th>Landed</th><th>Lead</th><th>Backup</th><th>Fit</th><th>Stage</th><th>Tier</th><th>Risk</th></tr></thead>
+        <tbody>
+        {% for x in suppliers %}
+          <tr>
+            <td>{{ x.supplier_name }}</td><td>{{ x.material_name }}</td><td>{{ x.material_category }}</td><td>{{ x.country }}</td>
+            <td>${{ "%.2f"|format(x.unit_cost) }}</td><td>${{ "%.2f"|format(x.landed_cost) }}</td>
+            <td>{{ x.lead_time }}d</td><td>{{ x.backup_supplier }}</td><td>{{ x.fit_score }}</td><td>{{ x.qualification_stage }}</td>
+            <td><span class="badge tier-{{ x.supplier_tier|lower }}">{{ x.supplier_tier }}</span></td>
+            <td><span class="badge risk-{{ x.risk_level|lower }}">{{ x.risk_level }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const chartData = {{ chart_data|tojson }};
+const aiContext = {{ ai_context|tojson }};
+
+new Chart(document.getElementById('spendChart'), {
+  type: 'bar',
+  data: { labels: chartData.category_labels, datasets: [{ data: chartData.category_spend, backgroundColor: '#7aa2ff', borderRadius: 10 }]},
+  options: { plugins: { legend: { display: false }}, scales: { x: { ticks: { color: '#d9e6ff' }, grid: { display: false }}, y: { ticks: { color: '#d9e6ff' }, grid: { color: 'rgba(255,255,255,0.08)' }}}}
+});
+new Chart(document.getElementById('fitChart'), {
+  type: 'bar',
+  data: { labels: chartData.fit_labels, datasets: [{ data: chartData.fit_values, backgroundColor: '#67e8f9', borderRadius: 10 }]},
+  options: { indexAxis: 'y', plugins: { legend: { display: false }}, scales: { x: { ticks: { color: '#d9e6ff' }, grid: { color: 'rgba(255,255,255,0.08)' }}, y: { ticks: { color: '#d9e6ff' }, grid: { display: false }}}}
+});
+
+async function loadAIInsight(mode, targetId, btnId) {
+  const target = document.getElementById(targetId);
+  const btn = document.getElementById(btnId);
+  const origLabel = btn.innerHTML;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ai-spinner"></span> Analyzing…';
+  target.classList.remove('ai-placeholder');
+  target.innerHTML = '<div class="ai-loading"><span class="ai-pulse"></span><span class="ai-pulse"></span><span class="ai-pulse"></span></div>';
+
+  try {
+    const res = await fetch('/api/ai-insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mode, context: aiContext })
+    });
+    const data = await res.json();
+    if (data.ok && data.insight) {
+      renderInsight(target, data.insight, mode);
+    } else {
+      target.innerHTML = '<p class="ai-error">Unable to generate insight. Check API connectivity.</p>';
+    }
+  } catch (e) {
+    target.innerHTML = '<p class="ai-error">Network error — please try again.</p>';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = origLabel;
+}
+
+function renderInsight(el, text, mode) {
+  if (mode === 'exec_summary') {
+    el.innerHTML = `<p class="ai-exec-generated">${escHtml(text)}</p>`;
+    return;
+  }
+  // Render bullet-style insights
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const html = lines.map(line => {
+    // bold **text:**
+    const formatted = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const isBullet = /^[\-\•\d\.]/.test(line);
+    return isBullet
+      ? `<div class="ai-bullet">${formatted}</div>`
+      : `<p>${formatted}</p>`;
+  }).join('');
+  el.innerHTML = `<div class="ai-bullets">${html}</div>`;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
